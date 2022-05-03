@@ -25,24 +25,10 @@ type (
 	RocksdbDump struct {
 		db *gorocksdb.DB
 	}
-
-	KV struct {
-		Key   []byte
-		Value []byte
-	}
 )
 
 func NewDumper() Dumper {
 	return &RocksdbDump{}
-}
-
-func NewKV(key []byte, value []byte) *KV {
-	kv := &KV{}
-	kv.Key = make([]byte, len(key))
-	kv.Value = make([]byte, len(value))
-	copy(kv.Key, key)
-	copy(kv.Value, value)
-	return kv
 }
 
 func (d *RocksdbDump) Open(dir string) error {
@@ -151,10 +137,10 @@ func (d *RocksdbDump) Count(ctx context.Context, partNum, prefixType int, prefix
 		wg.Add(partNum)
 		for i := 0; i < partNum; i++ {
 			go func(sum *int64, partId int) {
+				var data []byte
 				prefixBuf := bytes.Buffer{}
-				prefixPart := (partId << 8) | prefixType
-				data, err := int32ToBytes(prefixPart, byteOrder)
-				if err != nil {
+				prefixPart := int32((partId << 8) | prefixType)
+				if err := ConvertIntToBytes(&prefixPart, &data, ByteOrder); err != nil {
 					panic(err)
 				}
 				prefixBuf.Write(data)

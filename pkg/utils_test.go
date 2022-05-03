@@ -6,9 +6,14 @@ import (
 )
 
 func TestIntToBytes(t *testing.T) {
-	a := (255 << 8) | 0x00000001
+	a := int32((255 << 8) | 0x00000001)
 	t.Log(a)
-	t.Log(int32ToBytes(a, binary.LittleEndian))
+	var b []byte
+	err := ConvertIntToBytes(&a, &b, binary.LittleEndian)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(b)
 	t.Log([]byte{0xff})
 	t.Fatal(1)
 }

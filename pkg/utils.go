@@ -3,6 +3,7 @@ package pkg
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"unsafe"
 )
 
@@ -16,34 +17,7 @@ const (
 	kVertex        = 0x00000007
 )
 
-var byteOrder binary.ByteOrder
-
-func int64ToBytes(n int, order binary.ByteOrder) ([]byte, error) {
-	data := int64(n)
-	bytebuf := bytes.NewBuffer([]byte{})
-	if err := binary.Write(bytebuf, order, data); err != nil {
-		return nil, err
-	}
-	return bytebuf.Bytes(), nil
-}
-
-func int32ToBytes(n int, order binary.ByteOrder) ([]byte, error) {
-	data := int32(n)
-	bytebuf := bytes.NewBuffer([]byte{})
-	if err := binary.Write(bytebuf, order, data); err != nil {
-		return nil, err
-	}
-	return bytebuf.Bytes(), nil
-}
-
-func bytesToInt(bys []byte, order binary.ByteOrder) (int, error) {
-	bytebuff := bytes.NewBuffer(bys)
-	var data int64
-	if err := binary.Read(bytebuff, order, &data); err != nil {
-		return 0, err
-	}
-	return int(data), nil
-}
+var ByteOrder binary.ByteOrder
 
 func isLittleEndian() bool {
 	var i int32 = 0x01020304
@@ -55,29 +29,65 @@ func isLittleEndian() bool {
 
 func init() {
 	if isLittleEndian() {
-		byteOrder = binary.LittleEndian
+		ByteOrder = binary.LittleEndian
 	} else {
-		byteOrder = binary.BigEndian
+		ByteOrder = binary.BigEndian
 	}
 }
 
-func ConvertBytesToInt(bys []byte) (int, error) {
-	n := len(bys)
-	if n < 8 {
-		t := make([]byte, 8-n)
-		bys = append(bys, t...)
+func ConvertBytesToInt(i interface{}, b *[]byte, order binary.ByteOrder) error {
+	var l int
+	switch i.(type) {
+	case *int8, *uint8:
+		l = 1
+	case *int16, *uint16:
+		l = 2
+	case *int32, *uint32:
+		l = 4
+	case *int64, *uint64, *int, *uint:
+		l = 8
+	default:
+		return fmt.Errorf("must provide an integer point")
 	}
-	return bytesToInt(bys, byteOrder)
+	n := len(*b)
+	if n < l {
+		t := make([]byte, l-n)
+		*b = append(*b, t...)
+	}
+	bytebuff := bytes.NewBuffer(*b)
+	if err := binary.Read(bytebuff, order, i); err != nil {
+		return err
+	}
+	return nil
+
 }
 
-func ConvertIntToBytes(i int) ([]byte, error) {
-	return int64ToBytes(i, byteOrder)
+func ConvertIntToBytes(i interface{}, b *[]byte, order binary.ByteOrder) error {
+	switch i.(type) {
+	case *int8:
+	case *uint8:
+	case *int16:
+	case *uint16:
+	case *int32:
+	case *uint32:
+	case *int64, *int:
+	case *uint64, *uint:
+	default:
+		return fmt.Errorf("must provide an integer point")
+	}
+
+	bytebuf := bytes.NewBuffer([]byte{})
+	if err := binary.Write(bytebuf, order, i); err != nil {
+		return err
+	}
+	*b = bytebuf.Bytes()
+	return nil
 }
 
 func GetPart(partID int, keyType int) ([]byte, error) {
-	prefixPart := (partID << 8) | keyType
-	data, err := int32ToBytes(prefixPart, byteOrder)
-	if err != nil {
+	var data []byte
+	prefixPart := int32((partID << 8) | keyType)
+	if err := ConvertIntToBytes(&prefixPart, &data, ByteOrder); err != nil {
 		return nil, err
 	}
 	return data, nil

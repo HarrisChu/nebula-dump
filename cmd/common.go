@@ -6,7 +6,23 @@ import (
 	"strings"
 
 	"github.com/harrischu/nebula-dump/pkg"
+	"github.com/spf13/pflag"
 )
+
+type options struct {
+	flagset *pflag.FlagSet
+}
+
+func (o *options) addFlag(fs *pflag.FlagSet) {
+	o.flagset.AddFlagSet(fs)
+}
+
+func (o *options) getFlag() *pflag.FlagSet {
+	if o.flagset != nil {
+		return o.flagset
+	}
+	return nil
+}
 
 func must(err error) {
 	if err != nil {
@@ -46,9 +62,13 @@ func stringToBytes(s string) ([]byte, error) {
 }
 
 func intToBytes(s string) ([]byte, error) {
+	var data []byte
 	d, err := strconv.Atoi(s)
 	if err != nil {
 		return nil, err
 	}
-	return pkg.ConvertIntToBytes(d)
+	if err := pkg.ConvertIntToBytes(&d, &data, pkg.ByteOrder); err != nil {
+		return nil, err
+	}
+	return data, nil
 }

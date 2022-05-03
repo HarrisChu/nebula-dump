@@ -19,9 +19,9 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "nebula-dump",
-	Short: "A tool to decode rocksdb data",
+	Short: "A tool to decode nebula-graph data",
 
-	CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: true},
+	CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: false},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -41,7 +41,7 @@ func init() {
 	flags.BoolVarP(&v, "verbose", "v", false, "enable verbose logging")
 	cobra.MarkFlagRequired(flags, "dir")
 	must(cobra.MarkFlagDirname(flags, "dir"))
-	rootCmd.PersistentFlags().AddFlagSet(flags)
+	// rootCmd.PersistentFlags().AddFlagSet(flags)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		setUpLogs(os.Stdout, v)

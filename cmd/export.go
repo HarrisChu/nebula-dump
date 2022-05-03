@@ -47,7 +47,7 @@ func init() {
 	flags := pflag.NewFlagSet("", pflag.ContinueOnError)
 	flags.StringVarP(&out, "out", "", ".", "output folder")
 	flags.StringVarP(&partString, "partNum", "", "", "export part")
-	countCmd.PersistentFlags().AddFlagSet(flags)
+	exportCmd.PersistentFlags().AddFlagSet(flags)
 
 	must(cobra.MarkFlagRequired(flags, "out"))
 	must(cobra.MarkFlagRequired(flags, "partNum"))

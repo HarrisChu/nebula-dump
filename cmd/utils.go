@@ -46,11 +46,11 @@ convert --keyType bytes --key 255,0,0 --toType int
 			}
 			logger.Info(strings.Join(s, ","))
 		case "int":
-			data, err := pkg.ConvertBytesToInt(key)
-			if err != nil {
+			var i int64
+			if err := pkg.ConvertBytesToInt(&i, &key, pkg.ByteOrder); err != nil {
 				logger.Error(err)
 			} else {
-				logger.Info(data)
+				logger.Info(i)
 			}
 		case "string":
 			logger.Info(string(key))
