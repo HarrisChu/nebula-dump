@@ -1,1 +1,6 @@
 .vscode
+rocksdb
+.env
+nebula-dump
+
+tmp
