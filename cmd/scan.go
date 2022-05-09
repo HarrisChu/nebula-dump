@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/harrischu/nebula-dump/pkg/common"
 	"github.com/harrischu/nebula-dump/pkg"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -35,7 +36,7 @@ nebula-dump scan --keyType string --start key1 --end key2 --dir nebula/data/stor
 			logger.Error(err)
 			return
 		}
-		var kvs []*pkg.KV
+		var kvs []*common.KV
 		if endKey != "" {
 			end, err := covertToBytes(keyType, endKey)
 			if err != nil {

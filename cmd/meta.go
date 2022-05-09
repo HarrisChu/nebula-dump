@@ -13,7 +13,7 @@ var metaCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(metaCmd)
-	metaCmd.AddCommand(prefixCmd)
+	metaCmd.AddCommand(parseCmd)
 	o := new(options)
 	o.addFlag(nil)
 	metaCmd.Flags().AddFlagSet(o.getFlag())
@@ -21,12 +21,12 @@ func init() {
 
 var validArgs = []string{"pod", "node", "service", "replicationcontroller"}
 
-var prefixCmd = &cobra.Command{
-	Use:   "prefix",
-	Short: "",
+var parseCmd = &cobra.Command{
+	Use:   "parse",
+	Short: "parse kv in meta",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return fmt.Errorf("must provide a valid prefix")
+			return fmt.Errorf("must provide a valid key type")
 		}
 		return nil
 	},

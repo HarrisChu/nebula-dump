@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/harrischu/nebula-dump/pkg"
+	"github.com/harrischu/nebula-dump/pkg/common"
 	"github.com/spf13/pflag"
 )
 
@@ -67,7 +67,7 @@ func intToBytes(s string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := pkg.ConvertIntToBytes(&d, &data, pkg.ByteOrder); err != nil {
+	if err := common.ConvertIntToBytes(&d, &data, common.ByteOrder); err != nil {
 		return nil, err
 	}
 	return data, nil

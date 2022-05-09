@@ -9,6 +9,7 @@ import (
 
 	"time"
 
+	"github.com/harrischu/nebula-dump/pkg/common"
 	gorocksdb "github.com/linxGnu/grocksdb"
 )
 
@@ -16,9 +17,9 @@ type (
 	// Dumper dumper
 	Dumper interface {
 		Open(dir string) error
-		Get(ctx context.Context, key []byte) (kv *KV, err error)
-		ScanByRange(ctx context.Context, start, end []byte) (kvs []*KV, err error)
-		ScanByCount(ctx context.Context, start []byte, count int) (kvs []*KV, err error)
+		Get(ctx context.Context, key []byte) (kv *common.KV, err error)
+		ScanByRange(ctx context.Context, start, end []byte) (kvs []*common.KV, err error)
+		ScanByCount(ctx context.Context, start []byte, count int) (kvs []*common.KV, err error)
 		Count(ctx context.Context, partNum, prefixType int, prefix []byte) (int64, error)
 	}
 
@@ -72,17 +73,17 @@ func (d *RocksdbDump) runWithCtx(ctx context.Context, f func() (interface{}, err
 
 }
 
-func (d *RocksdbDump) Get(ctx context.Context, key []byte) (*KV, error) {
+func (d *RocksdbDump) Get(ctx context.Context, key []byte) (*common.KV, error) {
 	r, err := d.runWithCtx(ctx, func() (interface{}, error) {
 		return d.get(key)
 	})
 	if err != nil {
 		return nil, err
 	}
-	return r.(*KV), nil
+	return r.(*common.KV), nil
 }
 
-func (d *RocksdbDump) ScanByRange(ctx context.Context, start, end []byte) (kvs []*KV, err error) {
+func (d *RocksdbDump) ScanByRange(ctx context.Context, start, end []byte) (kvs []*common.KV, err error) {
 	r, err := d.runWithCtx(ctx, func() (interface{}, error) {
 		iter := d.db.NewIterator(gorocksdb.NewDefaultReadOptions())
 		defer iter.Close()
@@ -96,7 +97,7 @@ func (d *RocksdbDump) ScanByRange(ctx context.Context, start, end []byte) (kvs [
 			if bytes.Compare(iter.Key().Data(), end) > -1 {
 				break
 			}
-			kv := NewKV(iter.Key().Data(), iter.Value().Data())
+			kv := common.NewKV(iter.Key().Data(), iter.Value().Data())
 			kvs = append(kvs, kv)
 		}
 		return kvs, nil
@@ -104,10 +105,10 @@ func (d *RocksdbDump) ScanByRange(ctx context.Context, start, end []byte) (kvs [
 	if err != nil {
 		return nil, err
 	}
-	return r.([]*KV), nil
+	return r.([]*common.KV), nil
 }
 
-func (d *RocksdbDump) ScanByCount(ctx context.Context, start []byte, count int) (kvs []*KV, err error) {
+func (d *RocksdbDump) ScanByCount(ctx context.Context, start []byte, count int) (kvs []*common.KV, err error) {
 	r, err := d.runWithCtx(ctx, func() (interface{}, error) {
 		iter := d.db.NewIterator(gorocksdb.NewDefaultReadOptions())
 		defer iter.Close()
@@ -117,7 +118,7 @@ func (d *RocksdbDump) ScanByCount(ctx context.Context, start []byte, count int) 
 			iter.Seek(start)
 		}
 		for i := 0; i < count && iter.Valid(); i++ {
-			kv := NewKV(iter.Key().Data(), iter.Value().Data())
+			kv := common.NewKV(iter.Key().Data(), iter.Value().Data())
 			kvs = append(kvs, kv)
 			iter.Next()
 		}
@@ -126,7 +127,7 @@ func (d *RocksdbDump) ScanByCount(ctx context.Context, start []byte, count int) 
 	if err != nil {
 		return nil, err
 	}
-	return r.([]*KV), nil
+	return r.([]*common.KV), nil
 
 }
 
@@ -140,7 +141,7 @@ func (d *RocksdbDump) Count(ctx context.Context, partNum, prefixType int, prefix
 				var data []byte
 				prefixBuf := bytes.Buffer{}
 				prefixPart := int32((partId << 8) | prefixType)
-				if err := ConvertIntToBytes(&prefixPart, &data, ByteOrder); err != nil {
+				if err := common.ConvertIntToBytes(&prefixPart, &data, common.ByteOrder); err != nil {
 					panic(err)
 				}
 				prefixBuf.Write(data)
@@ -159,12 +160,12 @@ func (d *RocksdbDump) Count(ctx context.Context, partNum, prefixType int, prefix
 	return r.(int64), nil
 }
 
-func (d *RocksdbDump) get(key []byte) (kvs *KV, err error) {
+func (d *RocksdbDump) get(key []byte) (kvs *common.KV, err error) {
 	iter := d.db.NewIterator(gorocksdb.NewDefaultReadOptions())
 	defer iter.Close()
 	iter.Seek(key)
 	if iter.Valid() && bytes.Equal(iter.Key().Data(), key) {
-		kv := NewKV(iter.Key().Data(), iter.Value().Data())
+		kv := common.NewKV(iter.Key().Data(), iter.Value().Data())
 		return kv, nil
 	}
 	return nil, nil

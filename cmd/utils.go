@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/harrischu/nebula-dump/pkg"
+	"github.com/harrischu/nebula-dump/pkg/common"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -47,7 +47,7 @@ convert --keyType bytes --key 255,0,0 --toType int
 			logger.Info(strings.Join(s, ","))
 		case "int":
 			var i int64
-			if err := pkg.ConvertBytesToInt(&i, &key, pkg.ByteOrder); err != nil {
+			if err := common.ConvertBytesToInt(&i, &key, common.ByteOrder); err != nil {
 				logger.Error(err)
 			} else {
 				logger.Info(i)

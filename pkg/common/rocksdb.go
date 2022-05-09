@@ -1,7 +1,8 @@
-package pkg
+package common
 
 import (
 	"bytes"
+	"github.com/facebook/fbthrift/thrift/lib/go/thrift"
 
 	gorocksdb "github.com/linxGnu/grocksdb"
 )
@@ -17,7 +18,7 @@ type (
 		Value string
 	}
 
-	engine struct {
+	Engine struct {
 		db       *gorocksdb.DB
 		readonly bool
 		dbOps    *gorocksdb.Options
@@ -36,14 +37,14 @@ func NewKV(key []byte, value []byte) *KV {
 	return kv
 }
 
-func newRocksDb(path string) (*engine, error) {
-	e := &engine{}
+func NewRocksDbEngine(path string) (*Engine, error) {
+	e := &Engine{}
 	e.path = path
 	e.readonly = true
 	return e, nil
 }
 
-func (e *engine) open() error {
+func (e *Engine) Open() error {
 	var (
 		db  *gorocksdb.DB
 		err error
@@ -63,9 +64,9 @@ func (e *engine) open() error {
 	return nil
 }
 
-func (e *engine) prefix(p []byte) ([]*KV, error) {
+func (e *Engine) Prefix(p []byte) ([]*KV, error) {
 	if e.db == nil {
-		err := e.open()
+		err := e.Open()
 		if err != nil {
 			return nil, err
 		}
@@ -83,4 +84,36 @@ func (e *engine) prefix(p []byte) ([]*KV, error) {
 		kvs = append(kvs, kv)
 	}
 	return kvs, nil
+}
+
+func deserialize(pf thrift.ProtocolFactory, data *[]byte, s thrift.Struct) error {
+	transport := thrift.NewMemoryBufferWithData(*data)
+	protocol := pf.GetProtocol(transport)
+	err := s.Read(protocol)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func serialize(pf thrift.ProtocolFactory, data *[]byte, s thrift.Struct) error {
+	transport := thrift.NewMemoryBuffer()
+	protocol := pf.GetProtocol(transport)
+	err := s.Write(protocol)
+	if err != nil {
+		return err
+	}
+	*data = make([]byte, len(transport.Bytes()))
+	copy(*data, transport.Bytes())
+	return nil
+}
+
+func CompactSerializer(s thrift.Struct, data *[]byte) error {
+	pf := thrift.NewCompactProtocolFactory()
+	return serialize(pf, data, s)
+}
+
+func CompactDeserializer(s thrift.Struct, data *[]byte) error {
+	pf := thrift.NewCompactProtocolFactory()
+	return deserialize(pf, data, s)
 }
