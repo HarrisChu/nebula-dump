@@ -19,7 +19,6 @@ jobs:
         os:
           - ubuntu:20.04
           - centos:7
-          - centos:8
     container:
       image: ${{ matrix.os }}
     steps:
@@ -39,7 +38,6 @@ jobs:
               make \
               gcc \
               g++ \
-              which \
               libsnappy-dev \
               zlib1g-dev \
               libbz2-dev \
@@ -65,25 +63,6 @@ jobs:
                 perl \
                 git 
             echo "::set-output name=p::centos7"
-            ;;
-          centos:8)
-            yum install -y epel-release 
-            yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
-            yum install -y --nogpgcheck\
-                wget \
-                libzstd libzstd-devel \
-                snappy snappy-devel \
-                zlib zlib-devel \
-                bzip2 bzip2-devel \
-                lz4-devel \
-                make \
-                gcc \
-                which \
-                gcc-c++ \
-                python3 \
-                perl \
-                git 
-            echo "::set-output name=p::centos8"
             ;;
           esac
       - name: build
