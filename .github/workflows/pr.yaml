@@ -33,6 +33,7 @@ jobs:
         run: |
           case ${{ matrix.os }} in
           ubuntu2004)
+            apt-get update 
             apt-get install -y \
               libsnappy-dev \
               zlib1g-dev \
