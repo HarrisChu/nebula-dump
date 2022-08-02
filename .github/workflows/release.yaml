@@ -13,37 +13,81 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu2004
-          - centos7
+          - ubuntu:20.04
+          - centos:7
+          - centos:8
     container:
-      image: vesoft/nebula-dev:${{ matrix.os }}
+      image: ${{ matrix.os }}
+      
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v1
         with:
           go-version: 1.16.4
-          
+
       - name: prepare
+        id: prepare
         run: |
           case ${{ matrix.os }} in
-          ubuntu2004)
+          ubuntu:20.04)
+            apt-get update 
             apt-get install -y \
+              git \
+              make \
+              gcc \
+              g++ \
+              which \
               libsnappy-dev \
               zlib1g-dev \
               libbz2-dev \
               liblz4-dev \
               libzstd-dev
+            echo "::set-output name=p::ubuntu2004"
             ;;
-          centos7)
+          centos:7)
+            yum install -y epel-release 
             yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
-            yum install snappy-devel lz4-devel libzstd-devel -y
+            yum install -y --nogpgcheck\
+                wget \
+                libzstd libzstd-devel \
+                snappy snappy-devel \
+                zlib zlib-devel \
+                bzip2 bzip2-devel \
+                lz4-devel \
+                make \
+                gcc \
+                which \
+                gcc-c++ \
+                python3 \
+                perl \
+                git 
+            echo "::set-output name=p::centos7"
+            ;;
+          centos:8)
+            yum install -y epel-release 
+            yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
+            yum install -y --nogpgcheck\
+                wget \
+                libzstd libzstd-devel \
+                snappy snappy-devel \
+                zlib zlib-devel \
+                bzip2 bzip2-devel \
+                lz4-devel \
+                make \
+                gcc \
+                which \
+                gcc-c++ \
+                python3 \
+                perl \
+                git 
+            echo "::set-output name=p::centos8"
             ;;
           esac
 
       - name: build
         run: |
           make
-          mv nebula-dump nebula-dump-${{ matrix.os }}
+          mv nebula-dump nebula-dump-${{ steps.prepare.outputs.p }}
 
       - name: upload release asset
         uses: softprops/action-gh-release@v1
@@ -51,4 +95,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            nebula-dump-${{ matrix.os }}
+            nebula-dump-${{ steps.prepare.outputs.p }}
