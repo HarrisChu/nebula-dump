@@ -31,7 +31,9 @@ jobs:
         id: cache
         with:
           path: ./rocksdb
-          key: ${{ matrix.os }}
+          key: ${{ runner.os }}-${{ matrix }}-
+          restore-keys:
+            ${{ runner.os }}-${{ matrix }}-
 
       - name: prepare
         id: prepare
