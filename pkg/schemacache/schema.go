@@ -108,6 +108,7 @@ func (c *FileCache) Update() error {
 		}
 	}
 	req := meta.NewHBReq()
+	req.Role = meta.HostRole_UNKNOWN
 	resp, err := c.client.Client.HeartBeat(req)
 	if err != nil {
 		return err

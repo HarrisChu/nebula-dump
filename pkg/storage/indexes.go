@@ -16,11 +16,12 @@ import (
 // key: (type + part) + src + edge type(4bit) + dst
 // value: []
 type indexParser struct {
-	opts   *pkg.Option
-	engine *common.Engine
-	client *common.MetaClient
-	schema schemacache.Schemacache
-	index  *meta.IndexItem
+	opts    *pkg.Option
+	engine  *common.Engine
+	client  *common.MetaClient
+	schema  schemacache.Schemacache
+	index   *meta.IndexItem
+	hasNull bool
 }
 
 type indexValues struct {
@@ -32,8 +33,9 @@ type indexValues struct {
 
 func (p *indexParser) New(engine *common.Engine, opts *pkg.Option) pkg.Parser {
 	return &indexParser{
-		opts:   opts,
-		engine: engine,
+		opts:    opts,
+		engine:  engine,
+		hasNull: false,
 	}
 }
 
@@ -128,6 +130,12 @@ func (p *indexParser) Prefix() ([]*common.KV, error) {
 		return nil, fmt.Errorf("not a valid index id")
 	}
 
+	for _, f := range p.index.GetFields() {
+		if f.GetNullable() && p.hasNull {
+			p.hasNull = true
+		}
+	}
+
 	if p.opts.VID == "" {
 		part = p.opts.PartID
 	} else {
@@ -156,11 +164,30 @@ func (p *indexParser) Prefix() ([]*common.KV, error) {
 
 	if p.opts.VID != "" {
 		var length int
+		var hasNull bool = false
 		for _, f := range p.index.GetFields() {
-			length += int(f.GetType().GetTypeLength())
+			if f.GetNullable() && !hasNull {
+				hasNull = true
+			}
+			switch f.GetType().GetType() {
+			case nebula.PropertyType_GEOGRAPHY:
+				return nil, fmt.Errorf("not implement the type %v", f.GetType())
+
+			case nebula.PropertyType_FIXED_STRING:
+				length += int(f.GetType().GetTypeLength())
+
+			default:
+				l, err := getIndexTypeLength(f.GetType().GetType())
+				if err != nil {
+					return nil, err
+				}
+				length += l
+			}
 		}
 		//int16 for nullable bitmap
-		length += 2
+		if hasNull {
+			length += 2
+		}
 		fn := func(key []byte) bool {
 			vid := key[common.Sizeof(p.opts.PartID)+common.Sizeof(p.opts.IndexID)+length:]
 			if bytes.Compare(vid, vidBs) != 0 {
@@ -182,13 +209,23 @@ func newIndexValues(buf []byte, index *meta.IndexItem) (*indexValues, error) {
 	copy(newBuf, buf)
 	vs := &indexValues{buf: newBuf, index: index}
 	for _, f := range vs.index.GetFields() {
-		l := f.GetType().GetTypeLength()
+		var l int16
+		if f.GetType().GetType() == nebula.PropertyType_FIXED_STRING {
+			l = f.GetType().GetTypeLength()
+		} else {
+			t, err := getIndexTypeLength(f.GetType().GetType())
+			if err != nil {
+				return nil, err
+			}
+			l = int16(t)
+		}
 		b := vs.buf[vs.pos : vs.pos+l]
 		vs.pos += l
-		v, err := GetValue(b, f.GetType().GetType())
+		v, err := GetIndexValue(b, f.GetType().GetType())
 		if err != nil {
 			return nil, err
 		}
+
 		vs.values = append(vs.values, v)
 	}
 	return vs, nil
