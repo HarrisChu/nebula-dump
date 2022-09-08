@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"strconv"
@@ -230,6 +231,18 @@ func (r *rowReader) getValue(t *meta.ColumnTypeDef) (*nebula.Value, error) {
 		b = r.buf[offset : offset+1]
 		r.pos += 1
 
+	case nebula.PropertyType_INT8:
+		b = r.buf[offset : offset+1]
+		r.pos += 1
+
+	case nebula.PropertyType_INT16:
+		b = r.buf[offset : offset+2]
+		r.pos += 2
+
+	case nebula.PropertyType_INT32:
+		b = r.buf[offset : offset+4]
+		r.pos += 4
+
 	case nebula.PropertyType_INT64:
 		b = r.buf[offset : offset+8]
 		r.pos += 8
@@ -359,6 +372,36 @@ func GetValue(b []byte, t nebula.PropertyType) (*nebula.Value, error) {
 		}
 		v.SetBVal(&value)
 
+	case nebula.PropertyType_INT8:
+		var value int64
+		var t int8
+		if err := common.ConvertBytesToInt(&t, &b, common.ByteOrder); err != nil {
+			return nil, err
+		}
+		value = int64(t)
+		v.IVal = &value
+		v.SetIVal(&value)
+
+	case nebula.PropertyType_INT16:
+		var value int64
+		var t int16
+		if err := common.ConvertBytesToInt(&t, &b, common.ByteOrder); err != nil {
+			return nil, err
+		}
+		value = int64(t)
+		v.IVal = &value
+		v.SetIVal(&value)
+
+	case nebula.PropertyType_INT32:
+		var value int64
+		var t int32
+		if err := common.ConvertBytesToInt(&t, &b, common.ByteOrder); err != nil {
+			return nil, err
+		}
+		value = int64(t)
+		v.IVal = &value
+		v.SetIVal(&value)
+
 	case nebula.PropertyType_INT64:
 		var value int64
 		if err := common.ConvertBytesToInt(&value, &b, common.ByteOrder); err != nil {
@@ -425,4 +468,117 @@ func GetValue(b []byte, t nebula.PropertyType) (*nebula.Value, error) {
 		return nil, fmt.Errorf("not support this tpye: %d", t)
 	}
 	return v, nil
+}
+
+func GetIndexValue(b []byte, t nebula.PropertyType) (*nebula.Value, error) {
+	v := nebula.NewValue()
+	switch t {
+	case nebula.PropertyType_BOOL:
+		var value bool
+		if b[0] == 1 {
+			value = true
+		} else {
+			value = false
+		}
+		v.SetBVal(&value)
+
+	case nebula.PropertyType_INT8:
+		fallthrough
+	case nebula.PropertyType_INT16:
+		fallthrough
+
+	case nebula.PropertyType_INT32:
+		fallthrough
+
+	case nebula.PropertyType_INT64:
+		var value uint64
+		if err := common.ConvertBytesToInt(&value, &b, binary.BigEndian); err != nil {
+			return nil, err
+		}
+		value ^= uint64(1 << 63)
+		intv := int64(value)
+		v.IVal = &intv
+		v.SetIVal(&intv)
+
+	case nebula.PropertyType_FIXED_STRING:
+		v.SetSVal(b)
+	case nebula.PropertyType_STRING:
+		v.SetSVal(b)
+
+	case nebula.PropertyType_DATETIME:
+		var (
+			year     int16
+			month    int8
+			day      int8
+			hour     int8
+			minute   int8
+			second   int8
+			microsec int32
+		)
+		y, m, d, h, mi, s, ms := b[:2],
+			b[2:2+1],
+			b[2+1:2+1+1],
+			b[2+1+1:2+1+1+1],
+			b[2+1+1+1:2+1+1+1+1],
+			b[2+1+1+1+1:2+1+1+1+1+1],
+			b[2+1+1+1+1+1:2+1+1+1+1+1+4]
+		if err := common.ConvertBytesToInt(&year, &y, binary.BigEndian); err != nil {
+			return nil, err
+		}
+		if err := common.ConvertBytesToInt(&month, &m, binary.BigEndian); err != nil {
+			return nil, err
+		}
+		if err := common.ConvertBytesToInt(&day, &d, binary.BigEndian); err != nil {
+			return nil, err
+		}
+		if err := common.ConvertBytesToInt(&hour, &h, binary.BigEndian); err != nil {
+			return nil, err
+		}
+		if err := common.ConvertBytesToInt(&minute, &mi, binary.BigEndian); err != nil {
+			return nil, err
+		}
+		if err := common.ConvertBytesToInt(&second, &s, binary.BigEndian); err != nil {
+			return nil, err
+		}
+		if err := common.ConvertBytesToInt(&microsec, &ms, binary.BigEndian); err != nil {
+			return nil, err
+		}
+
+		dt := nebula.NewDateTime()
+		dt.SetYear(year)
+		dt.SetMonth(month)
+		dt.SetDay(day)
+		dt.SetHour(hour)
+		dt.SetMinute(minute)
+		dt.SetSec(second)
+		dt.SetMicrosec(microsec)
+		v.SetDtVal(dt)
+
+	default:
+		return nil, fmt.Errorf("not support this tpye: %d", t)
+	}
+	return v, nil
+}
+
+func getIndexTypeLength(t nebula.PropertyType) (int, error) {
+	var l int
+	switch t {
+	case nebula.PropertyType_INT8:
+		fallthrough
+	case nebula.PropertyType_INT16:
+		fallthrough
+	case nebula.PropertyType_INT32:
+		fallthrough
+	case nebula.PropertyType_INT64:
+		l = 8
+	case nebula.PropertyType_BOOL:
+		l = 1
+	case nebula.PropertyType_DATETIME:
+		l = 2 + 1 + 1 + 1 + 1 + 1 + 4
+
+	default:
+		return 0, fmt.Errorf("unsupport type, type is %v", t)
+	}
+	return l, nil
+
 }
