@@ -83,10 +83,10 @@ func getVidByte(vid string, spaceID int32, schema schemacache.Schemacache) ([]by
 	space := schema.GetSpace(spaceID)
 	vidType := space.GetProperties().GetVidType().GetType()
 	vidLength := space.GetProperties().GetVidType().TypeLength
-	b := make([]byte, vidLength)
 
 	if vidType == nebula.PropertyType_INT64 {
 		temp, err := strconv.Atoi(vid)
+		b := make([]byte, 8)
 		if err != nil {
 			return nil, err
 		}
@@ -94,16 +94,15 @@ func getVidByte(vid string, spaceID int32, schema schemacache.Schemacache) ([]by
 		if err := common.ConvertIntToBytes(&v, &b, common.ByteOrder); err != nil {
 			return nil, err
 		}
+		return b, nil
 	} else {
-		temp := []byte(vid)
-		if len(temp) > int(vidLength) {
+		b := []byte(vid)
+		if len(b) > int(vidLength) {
 			return nil, fmt.Errorf("invalid vid length, vid is %s, length is %d", vid, vidLength)
 		}
-		for i := 0; i < len(temp); i++ {
-			b[i] = temp[i]
-		}
+		return b, nil
+
 	}
-	return b, nil
 }
 
 func getVidString(vid []byte, spaceID int32, schema schemacache.Schemacache) (string, error) {
