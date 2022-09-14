@@ -190,7 +190,9 @@ func (p *indexParser) Prefix() ([]*common.KV, error) {
 		}
 		fn := func(key []byte) bool {
 			vid := key[common.Sizeof(p.opts.PartID)+common.Sizeof(p.opts.IndexID)+length:]
-			if bytes.Compare(vid, vidBs) != 0 {
+			expectVid := make([]byte, len(vid))
+			copy(expectVid, vidBs)
+			if bytes.Compare(vid, expectVid) != 0 {
 				common.Logger.Debugf("ignore the key, expect is %v, actual is %v, the key is %v", vidBs, vid, key)
 				return false
 			} else {
