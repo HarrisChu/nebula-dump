@@ -27,7 +27,7 @@ RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backu
 	&& tar -C /usr/local -xzf go${golang_version}.linux-amd64.tar.gz 
 
 RUN cd rocksdb \
-	&& make static_lib
+	&& make static_lib -j 4
 
 ADD . /app
 
