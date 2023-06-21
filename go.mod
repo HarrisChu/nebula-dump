@@ -9,6 +9,6 @@ require (
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	github.com/vesoft-inc/nebula-go/v3 v3.0.0-20220425030225-cdb52399b40a
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	github.com/vesoft-inc/nebula-go/v3 v3.5.0
+	gopkg.in/yaml.v3 v3.0.1
 )

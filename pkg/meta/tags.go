@@ -61,7 +61,7 @@ func (p *tagParser) Parse(kv *common.KV) (*common.KVString, error) {
 	}
 	columns := make([]string, 0)
 	for _, c := range schema.Columns {
-		columns = append(columns, string(c.Name))
+		columns = append(columns, fmt.Sprintf("name:%s;default:%s", string(c.Name), string(c.DefaultValue)))
 	}
 	kvstring.Value = fmt.Sprintf(
 		"name:%s, columns:%v, ttl column: %s, ttl duration: %d",

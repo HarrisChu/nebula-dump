@@ -4,9 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
-	"time"
 
 	"github.com/harrischu/nebula-dump/pkg/common"
 	"github.com/vesoft-inc/nebula-go/v3/nebula/meta"
@@ -25,16 +23,15 @@ type (
 	}
 
 	FileCache struct {
-		path           string
-		name           string
-		spaces         map[int32]*meta.SpaceItem
-		tags           map[int32][]*meta.TagItem
-		edges          map[int32][]*meta.EdgeItem
-		indexes        map[int32][]*meta.IndexItem
-		lastUpdateTime time.Duration
-		client         *common.MetaClient
-		rwMutex        sync.RWMutex
-		address        string
+		path    string
+		name    string
+		spaces  map[int32]*meta.SpaceItem
+		tags    map[int32][]*meta.TagItem
+		edges   map[int32][]*meta.EdgeItem
+		indexes map[int32][]*meta.IndexItem
+		client  *common.MetaClient
+		rwMutex sync.RWMutex
+		address string
 	}
 
 	CacheData struct {
@@ -102,25 +99,11 @@ func (c *FileCache) Close() error {
 func (c *FileCache) Update() error {
 	// get the last update time from meta.
 	// if the time is same, return directly
-	if c.lastUpdateTime == 0 {
-		if err := c.readFromFile(); err != nil {
-			return err
-		}
-	}
-	req := meta.NewHBReq()
-	req.Role = meta.HostRole_UNKNOWN
-	resp, err := c.client.Client.HeartBeat(req)
-	if err != nil {
-		return err
-	}
-	if resp.LastUpdateTimeInMs == int64(c.lastUpdateTime) {
-		return nil
-	}
+
 	// update and flush schema
 	if err := c.updateSchema(); err != nil {
 		return err
 	}
-	c.lastUpdateTime = time.Duration(resp.LastUpdateTimeInMs)
 
 	if err := c.writeToFile(); err != nil {
 		return err
@@ -226,7 +209,6 @@ func (c *FileCache) convertToData() (*CacheData, error) {
 	d := &CacheData{
 		Spaces: make([]*SpaceData, 0),
 	}
-	d.LastUpdateTime = strconv.Itoa(int(c.lastUpdateTime))
 
 	for id, space := range c.spaces {
 		spaceData := &SpaceData{
@@ -276,12 +258,6 @@ func (c *FileCache) convertToData() (*CacheData, error) {
 func (c *FileCache) convertFromData(d *CacheData) error {
 	c.rwMutex.RLock()
 	defer c.rwMutex.RUnlock()
-	i, err := strconv.Atoi(d.LastUpdateTime)
-	if err != nil {
-		return err
-	}
-
-	c.lastUpdateTime = time.Duration(i)
 
 	for _, spaceData := range d.Spaces {
 		id := spaceData.Id
