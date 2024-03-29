@@ -143,7 +143,8 @@ func (p *indexParser) Prefix() ([]*common.KV, error) {
 		if err != nil {
 			return nil, err
 		}
-		id, err := common.GetPartID(vidBs, space.GetProperties().GetPartitionNum())
+		vidLength := space.GetProperties().GetVidType().GetTypeLength()
+		id, err := common.GetPartID(vidBs, space.GetProperties().GetPartitionNum(), vidLength)
 		if err != nil {
 			return nil, err
 		}

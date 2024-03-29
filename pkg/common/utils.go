@@ -103,9 +103,15 @@ func GetPartPrefix(partID int, keyType int) ([]byte, error) {
 	return data, nil
 }
 
-func GetPartID(vid []byte, count int32) (int32, error) {
+func GetPartID(vid []byte, count int32, length int16) (int32, error) {
 	var partID int32
-	if len(vid) == 8 {
+	if int(length) < len(vid) {
+		return 0, fmt.Errorf("vid length is too long")
+	}
+	bs := make([]byte, length, length)
+	copy(bs, vid)
+
+	if len(bs) == 8 {
 		var v int64
 		if err := ConvertBytesToInt(&v, &vid, ByteOrder); err != nil {
 			return 0, err

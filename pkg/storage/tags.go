@@ -99,7 +99,7 @@ func (p *tagParser) Prefix() ([]*common.KV, error) {
 		if err != nil {
 			return nil, err
 		}
-		id, err := common.GetPartID(bs, space.GetProperties().GetPartitionNum())
+		id, err := common.GetPartID(bs, space.GetProperties().GetPartitionNum(), space.GetProperties().GetVidType().GetTypeLength())
 		if err != nil {
 			return nil, err
 		}

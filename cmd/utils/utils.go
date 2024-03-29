@@ -12,6 +12,7 @@ type utilsOptsType struct {
 	partsCount  int
 	vid         string
 	vidType     string
+	vidLength   int
 	sstPath     string
 	sstToPath   string
 	prefix      string

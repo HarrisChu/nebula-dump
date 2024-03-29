@@ -29,6 +29,7 @@ var getPartIDCmd = &cobra.Command{
 			}
 		case "int":
 			v, err := strconv.ParseInt(utilsOpts.vid, 10, 0)
+			utilsOpts.vidLength = 8
 			if err != nil {
 				return err
 			}
@@ -38,7 +39,7 @@ var getPartIDCmd = &cobra.Command{
 		default:
 			return fmt.Errorf("vidType should be int or string")
 		}
-		id, err := common.GetPartID(bs, int32(utilsOpts.partsCount))
+		id, err := common.GetPartID(bs, int32(utilsOpts.partsCount), int16(utilsOpts.vidLength))
 		if err != nil {
 			return err
 		}
@@ -52,6 +53,7 @@ func init() {
 	flags.StringVar(&utilsOpts.vid, "vid", "", "vid")
 	flags.StringVar(&utilsOpts.vidType, "vidType", "", "string or int")
 	flags.IntVar(&utilsOpts.partsCount, "partsCount", 0, "parts count")
+	flags.IntVar(&utilsOpts.vidLength, "vidLength", 0, "vid length, used for fixed string vid type")
 	cobra.MarkFlagRequired(flags, "partsCount")
 	cobra.MarkFlagRequired(flags, "vid")
 	getPartIDCmd.PersistentFlags().AddFlagSet(flags)
