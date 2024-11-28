@@ -1,5 +1,6 @@
 .vscode
 rocksdb
+third-party
 .env
 nebula-dump
 
