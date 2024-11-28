@@ -17,7 +17,7 @@ prepare:
 build: prepare
 	rm -rf ./nebula-dump
 	CGO_CFLAGS="-I${PWD}/third-party/include" \
-	CGO_LDFLAGS="-L${PWD}/third-party/lib -lrocksdb -lstdc++ -lm -lz -lsnappy -llz4 -lbz2"  \
+	CGO_LDFLAGS="-L${PWD}/third-party/lib -L${PWD}/third-party/lib64 -lrocksdb -lstdc++ -lm -lz -lsnappy -llz4 -lbz2"  \
 	go build -ldflags '-linkmode external -extldflags "-L/usr/local/lib -Wl,-Bstatic -lrocksdb -lsnappy -lstdc++ -lm -lz -lbz2 -llz4 -lzstd -Wl,-Bdynamic"'
 
 build-docker:
